@@ -34,24 +34,26 @@ let tryExecute (t:Test) = async{
 
 let tests = new List<Test>()
 
-type Service1 = WsdlService<ServiceUri="https://localhost:4711/MT_1_v1.svc?wsdl">    
+type Service1 = WsdlService<ServiceUri="https://localhost:4711/MT_1_v1.svc?wsdl">
 let client1 = Service1.GetBasicHttpsBinding_ITimeService()
 configure client1.DataContext "https://localhost:4711/MT_1_v1.svc" true
 let c1 = {name="https"; execution=(fun()->client1.GetTime()|>ignore)}
 tests.Add(c1)
 
-type Service2 = WsdlService<ServiceUri="http://localhost:4710/MT_1_v1.svc?wsdl">    
+type Service2 = WsdlService<ServiceUri="http://localhost:4710/MT_1_v1.svc?wsdl">
 let client2 = Service2.GetBasicHttpBinding_ITimeService()
 configure client2.DataContext "http://localhost:4710/MT_1_v12.svc" false
 let c2 = {name="http"; execution=(fun()->client2.GetTime()|>ignore)}
 tests.Add(c2)
 
-tests
-    |> Seq.map (fun (test) -> tryExecute test)
-    |> Async.Parallel
-    |> Async.RunSynchronously
+let testResults = 
+    tests
+        |> Seq.map tryExecute
+        |> Async.Parallel
+        |> Async.RunSynchronously
+
+testResults
     |> Seq.iter (
         fun (testResult) -> 
             let suc = if testResult.success then "Success" else "Fail" 
             Console.WriteLine(testResult.name + ":\t" + suc))
-    |> ignore
